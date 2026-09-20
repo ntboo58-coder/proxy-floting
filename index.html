@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+* {
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+   user-select: none;
+   -webkit-user-select: none;
+}
+
+body {
+   background: transparent;
+   font-family: 'Segoe UI', system-ui, sans-serif;
+   height: 100vh;
+   overflow: hidden;
+}
+
+.float {
+   height: 100vh;
+   max-height: 320px;
+   background: #1c1c1e;
+   border-radius: 14px;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
+   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+/* Title */
+.title {
+   padding: 16px 18px 13px;
+   font-size: 15px;
+   font-weight: 600;
+   color: #ffffff;
+   letter-spacing: 0.3px;
+   border-bottom: 1px solid rgba(255,255,255,0.08); /* এই দাগটা */
+}
+
+/* List */
+.list {
+   flex: 1;
+   overflow-y: auto;
+   padding: 6px 8px 6px;
+}
+
+.list::-webkit-scrollbar {
+   width: 0;
+}
+
+.item {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 13px 12px;
+   margin: 0 4px 2px;
+   border-radius: 10px;
+   cursor: pointer;
+}
+
+.item .name {
+   font-size: 14.5px;
+   font-weight: 400;
+   color: #e5e5e5;
+}
+
+/* Toggle Switch */
+.switch {
+   width: 46px;
+   height: 28px;
+   background: #3a3a3c;
+   border-radius: 20px;
+   position: relative;
+   transition: background 0.25s;
+   flex-shrink: 0;
+}
+
+.switch::after {
+   content: '';
+   position: absolute;
+   width: 24px;
+   height: 24px;
+   background: #ffffff;
+   border-radius: 50%;
+   top: 2px;
+   left: 2px;
+   transition: left 0.25s;
+   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.item.on .switch {
+   background: #ff1f3d;
+}
+
+.item.on .switch::after {
+   left: 20px;
+}
+
+/* Color item */
+.color-item {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 13px 12px;
+   margin: 0 4px 2px;
+   border-radius: 10px;
+   position: relative;
+}
+
+.color-item .name {
+   font-size: 14.5px;
+   font-weight: 400;
+   color: #e5e5e5;
+}
+
+.color-right {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+.color-pick {
+   display: flex;
+   align-items: center;
+   gap: 5px;
+   padding: 4px 8px;
+   background: #2c2c2e;
+   border-radius: 8px;
+   cursor: pointer;
+}
+
+.color-pick .dot {
+   width: 14px;
+   height: 14px;
+   border-radius: 50%;
+}
+
+.color-pick span {
+   font-size: 11px;
+   color: #8e8e93;
+}
+
+.menu {
+   position: absolute;
+   top: calc(100% + 4px);
+   right: 12px;
+   background: #2c2c2e;
+   border-radius: 10px;
+   padding: 4px;
+   min-width: 130px;
+   display: none;
+   flex-direction: column;
+   z-index: 20;
+   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.menu.open {
+   display: flex;
+}
+
+.menu div {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 9px 10px;
+   border-radius: 7px;
+   font-size: 13px;
+   color: #e5e5e5;
+   cursor: pointer;
+}
+
+.menu div:hover {
+   background: rgba(255,255,255,0.08);
+}
+
+.menu div.selected {
+   background: rgba(255,31,61,0.2);
+}
+
+.menu .d {
+   width: 12px;
+   height: 12px;
+   border-radius: 50%;
+}
+
+.menu .id {
+   margin-left: auto;
+   font-size: 11px;
+   color: #8e8e93;
+}
+
+/* Bottom CLOSE */
+.bottom {
+   padding: 8px 14px 14px;
+}
+
+.close-btn {
+   width: 100%;
+   height: 42px;
+   border-radius: 10px;
+   border: none;
+   background: #2c2c2e;
+   color: #ffffff;
+   font-size: 15px;
+   font-weight: 500;
+   cursor: pointer;
+   letter-spacing: 0.5px;
+}
+
+.close-btn:active {
+   background: #3a3a3c;
+}
+
+/* Loading */
+.loading {
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: #8e8e93;
+   font-size: 14px;
+}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="float">
+
+   <div class="title">GHOST X</div>
+
+   <div class="list" id="button-container">
+      <div class="loading">Loading...</div>
+   </div>
+
+   <div class="bottom">
+      <button class="close-btn" onclick="controlWindow(99)">CLOSE</button>
+   </div>
+
+</div>
+
+<script>
+let selectedColors = {};
+let buttonData = {};
+
+if (navigator.onLine) {
+   firebase.initializeApp({
+      databaseURL: "https://test-795b1-default-rtdb.firebaseio.com"
+   });
+
+   firebase.database().ref("panel_buttons").on("value", (snapshot) => {
+      const box = document.getElementById("button-container");
+
+      if (!snapshot.exists()) {
+         box.innerHTML = `<div class="loading">Syncing...</div>`;
+         return;
+      }
+
+      let html = "";
+      let has = false;
+      buttonData = {};
+
+      snapshot.forEach((child) => {
+         const d = child.val();
+         if (d.active === false) return;
+
+         has = true;
+         const idx = d.index || 0;
+         const name = d.name || "Feature";
+         const type = d.type || "normal";
+         buttonData[idx] = d;
+
+         if (type === "color") {
+            const colors = d.colors || [
+               { hex: '#ff1f3d', label: 'Red', androidIndex: 1 },
+               { hex: '#00ff88', label: 'Green', androidIndex: 2 },
+               { hex: '#ffaa00', label: 'Yellow', androidIndex: 3 }
+            ];
+            const sel = selectedColors[idx] || 0;
+            const c = colors[sel] || colors[0];
+
+            let items = "";
+            colors.forEach((col, i) => {
+               items += `
+                  <div class="\( {i === sel ? 'selected' : ''}" onclick="event.stopPropagation(); selectColor( \){idx}, ${i})">
+                     <span class="d" style="background:${col.hex}"></span>
+                     ${col.label || 'Color'}
+                     <span class="id">#${col.androidIndex || (i+1)}</span>
+                  </div>`;
+            });
+
+            html += `
+               <div class="color-item" id="cw_${idx}">
+                  <div class="name">${name}</div>
+                  <div class="color-right">
+                     <div style="position:relative">
+                        <div class="color-pick" onclick="event.stopPropagation(); toggleMenu(${idx})">
+                           <span class="dot" id="dot_\( {idx}" style="background: \){c.hex}"></span>
+                           <span>▼</span>
+                        </div>
+                        <div class="menu" id="menu_\( {idx}"> \){items}</div>
+                     </div>
+                  </div>
+               </div>`;
+         } else {
+            html += `
+               <div class="item" onclick="clickBtn(this, ${idx})">
+                  <div class="name">${name}</div>
+                  <div class="switch"></div>
+               </div>`;
+         }
+      });
+
+      box.innerHTML = has ? html : `<div class="loading">No Features</div>`;
+   });
+}
+
+function clickBtn(el, idx) {
+   el.classList.toggle('on');
+   if (window.AndroidBridge) window.AndroidBridge.performNativeClick(idx);
+}
+
+function toggleMenu(idx) {
+   const m = document.getElementById('menu_' + idx);
+   document.querySelectorAll('.menu').forEach(x => {
+      if (x !== m) x.classList.remove('open');
+   });
+   m.classList.toggle('open');
+}
+
+function selectColor(btnIdx, colorIdx) {
+   selectedColors[btnIdx] = colorIdx;
+   const d = buttonData[btnIdx];
+   if (!d) return;
+
+   const colors = d.colors || [];
+   const c = colors[colorIdx] || colors[0];
+   const id = c.androidIndex || (colorIdx + 1);
+
+   const dot = document.getElementById('dot_' + btnIdx);
+   if (dot) dot.style.background = c.hex;
+
+   const menu = document.getElementById('menu_' + btnIdx);
+   if (menu) {
+      menu.querySelectorAll('div').forEach((el, i) => {
+         el.classList.toggle('selected', i === colorIdx);
+      });
+      menu.classList.remove('open');
+   }
+
+   if (window.AndroidBridge) window.AndroidBridge.performNativeClick(id);
+}
+
+document.addEventListener('click', (e) => {
+   if (!e.target.closest('.color-pick') && !e.target.closest('.menu')) {
+      document.querySelectorAll('.menu').forEach(m => m.classList.remove('open'));
+   }
+});
+
+function controlWindow(code) {
+   if (window.AndroidBridge) window.AndroidBridge.performNativeClick(code);
+}
+</script>
+</body>
+</html>
